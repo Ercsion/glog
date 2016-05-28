@@ -660,7 +660,7 @@ static void ColoredWriteToStderr(LogSeverity severity,
   // Restores the text color.
   SetConsoleTextAttribute(stderr_handle, old_color_attrs);
 #else
-  fprintf(stderr, "\033[0;3%sm", GetAnsiColorCode(color));
+  fprintf(stderr, "\033[1;3%sm", GetAnsiColorCode(color));
   fwrite(message, len, 1, stderr);
   fprintf(stderr, "\033[m");  // Resets the terminal to default.
 #endif  // OS_WINDOWS
@@ -727,8 +727,15 @@ inline void LogDestination::LogToAllLogfiles(LogSeverity severity,
   if ( FLAGS_logtostderr ) {           // global flag: never log to file
     ColoredWriteToStderr(severity, message, len);
   } else {
-    for (int i = severity; i >= 0; --i)
-      LogDestination::MaybeLogToLogfile(i, timestamp, message, len);
+	if ( FLAGS_logtominservity )
+	{
+	 LogDestination::MaybeLogToLogfile(FLAGS_stderrthreshold, timestamp, message, len);
+	}
+	else
+	{
+	 for (int i = severity; i >= 0; --i)
+	     LogDestination::MaybeLogToLogfile(i, timestamp, message, len);
+	}
   }
 }
 
@@ -1208,18 +1215,26 @@ void LogMessage::Init(const char* file,
   // We exclude the thread_id for the default thread.
   if (FLAGS_log_prefix && (line != kNoLogPrefix)) {
     stream() << LogSeverityNames[severity][0]
-             << setw(2) << 1+data_->tm_time_.tm_mon
+             << LogSeverityNames[severity][1]
+             << LogSeverityNames[severity][2]
+             << ' '
+             << setw(2) << data_->tm_time_.tm_year%100 << '/'
+             << setw(2) << 1+data_->tm_time_.tm_mon    << '/'
              << setw(2) << data_->tm_time_.tm_mday
              << ' '
              << setw(2) << data_->tm_time_.tm_hour  << ':'
              << setw(2) << data_->tm_time_.tm_min   << ':'
              << setw(2) << data_->tm_time_.tm_sec   << "."
              << setw(6) << usecs
-             << ' '
-             << setfill(' ') << setw(5)
+             << " ["
+             << setfill(' ') << setw(4)
              << static_cast<unsigned int>(GetTID()) << setfill('0')
              << ' '
-             << data_->basename_ << ':' << data_->line_ << "] ";
+             << setfill(' ') << setw(24)
+             << data_->basename_
+             << ' '
+             << setfill(' ') << setw(3)
+             << data_->line_ << " ]";
   }
   data_->num_prefix_chars_ = data_->stream_->pcount();
 

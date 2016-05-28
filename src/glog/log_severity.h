@@ -53,7 +53,9 @@ const int GLOG_INFO = 0, GLOG_WARNING = 1, GLOG_ERROR = 2, GLOG_FATAL = 3,
 const int INFO = GLOG_INFO, WARNING = GLOG_WARNING,
   ERROR = GLOG_ERROR, FATAL = GLOG_FATAL;
 #endif
-
+const int INF = GLOG_INFO, WAR = GLOG_WARNING,
+  ERR = GLOG_ERROR, FAT = GLOG_FATAL;
+  
 // DFATAL is FATAL in debug mode, ERROR in normal mode
 #ifdef NDEBUG
 #define DFATAL_LEVEL ERROR
