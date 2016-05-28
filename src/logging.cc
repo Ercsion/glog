@@ -100,6 +100,8 @@ static bool BoolFromEnv(const char *varname, bool defval) {
 
 GLOG_DEFINE_bool(logtostderr, BoolFromEnv("GOOGLE_LOGTOSTDERR", false),
                  "log messages go to stderr instead of logfiles");
+GLOG_DEFINE_bool(logtominservity, BoolFromEnv("GOOGLE_LOGTOMINSERVITY", false),
+                 "Sets all log to the min servity log file");
 GLOG_DEFINE_bool(alsologtostderr, BoolFromEnv("GOOGLE_ALSOLOGTOSTDERR", false),
                  "log messages go to stderr in addition to logfiles");
 GLOG_DEFINE_bool(colorlogtostderr, false,
