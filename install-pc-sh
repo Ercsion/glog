@@ -1,0 +1,11 @@
+#!/bin/sh
+rm _install -rf
+./configure --prefix=$(pwd)/_install
+make -j4
+make install
+cp ./_install/lib/libglog.a ../gate/lib/pc/
+cp ./_install/include/glog  ../gate/inc/ -rf
+cp ./_install/lib/libglog.a ../MCU/lib/pc/
+cp ./_install/include/glog  ../MCU/inc/ -rf
+cp ./_install/lib/libglog.a ../SVR/lib/pc/
+cp ./_install/include/glog  ../SVR/inc/ -rf

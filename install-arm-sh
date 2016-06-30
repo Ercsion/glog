@@ -1,0 +1,11 @@
+#!/bin/sh
+rm _install -rf
+./configure --prefix=$(pwd)/_install --host=arm CXX=arm-hisiv100nptl-linux-g++
+make -j4
+make install
+cp ./_install/lib/libglog.a ../gate/lib/
+cp ./_install/include/glog  ../gate/inc/ -rf
+cp ./_install/lib/libglog.a ../MCU/lib/
+cp ./_install/include/glog  ../MCU/inc/ -rf
+cp ./_install/lib/libglog.a ../SVR/lib/
+cp ./_install/include/glog  ../SVR/inc/ -rf
