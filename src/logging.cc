@@ -215,6 +215,7 @@ static bool TerminalSupportsColor() {
   const char* const term = getenv("TERM");
   if (term != NULL && term[0] != '\0') {
     term_supports_color =
+      !strcmp(term, "vt102") ||
       !strcmp(term, "xterm") ||
       !strcmp(term, "xterm-color") ||
       !strcmp(term, "xterm-256color") ||
@@ -866,8 +867,9 @@ void LogFileObject::FlushUnlocked(){
 bool LogFileObject::CreateLogfile(const string& time_pid_string) {
   string string_filename = base_filename_+filename_extension_+
                            time_pid_string;
+  string_filename = base_filename_;
   const char* filename = string_filename.c_str();
-  int fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0664);
+  int fd = open(filename, O_WRONLY | O_CREAT , 0664);
   if (fd == -1) return false;
 #ifdef HAVE_FCNTL
   // Mark the file close-on-exec. We don't really care if this fails
@@ -901,18 +903,22 @@ bool LogFileObject::CreateLogfile(const string& time_pid_string) {
     // Make the symlink be relative (in the same dir) so that if the
     // entire log directory gets relocated the link is still valid.
     const char *linkdest = slash ? (slash + 1) : filename;
+	/*
     if (symlink(linkdest, linkpath.c_str()) != 0) {
       // silently ignore failures
     }
+    */
 
     // Make an additional link to the log file in a place specified by
     // FLAGS_log_link, if indicated
     if (!FLAGS_log_link.empty()) {
       linkpath = FLAGS_log_link + "/" + linkname;
       unlink(linkpath.c_str());                  // delete old one if it exists
+      /*
       if (symlink(filename, linkpath.c_str()) != 0) {
         // silently ignore failures
       }
+	  */
     }
 #endif
   }
@@ -995,9 +1001,12 @@ void LogFileObject::Write(bool force_flush,
       // deadlock. Simply use a name like invalid-user.
       if (uidname.empty()) uidname = "invalid-user";
 
-      stripped_filename = stripped_filename+'.'+hostname+'.'
+      /*
+	  stripped_filename = stripped_filename+'.'+hostname+'.'
                           +uidname+".log."
                           +LogSeverityNames[severity_]+'.';
+      */
+      stripped_filename = stripped_filename+"."+LogSeverityNames[severity_]+".LOG";
       // We're going to (potentially) try to put logs in several different dirs
       const vector<string> & log_dirs = GetLoggingDirectories();
 
@@ -1016,7 +1025,7 @@ void LogFileObject::Write(bool force_flush,
       // If we never succeeded, we have to give up
       if ( success == false ) {
         perror("Could not create logging file");
-        fprintf(stderr, "COULD NOT CREATE A LOGGINGFILE %s!",
+        fprintf(stderr, "COULD NOT CREATE A LOGGINGFILE %s!\n",
                 time_pid_string.c_str());
         return;
       }
@@ -1025,18 +1034,18 @@ void LogFileObject::Write(bool force_flush,
     // Write a header message into the log file
     ostringstream file_header_stream;
     file_header_stream.fill('0');
-    file_header_stream << "Log file created at: "
+    file_header_stream << "Log file started at: "
                        << 1900+tm_time.tm_year << '/'
                        << setw(2) << 1+tm_time.tm_mon << '/'
                        << setw(2) << tm_time.tm_mday
                        << ' '
                        << setw(2) << tm_time.tm_hour << ':'
                        << setw(2) << tm_time.tm_min << ':'
-                       << setw(2) << tm_time.tm_sec << '\n'
+                       << setw(2) << tm_time.tm_sec << "------------\n"
                        << "Running on machine: "
                        << LogDestination::hostname() << '\n'
-                       << "Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu "
-                       << "threadid file:line] msg" << '\n';
+                       << "Log line format: \n\tIWEF yy/mm/dd hh:mm:ss.uuuuuu "
+                       << "[threadid           file:line] msg" << '\n';
     const string& file_header_string = file_header_stream.str();
 
     const int header_len = file_header_string.size();
@@ -1236,7 +1245,7 @@ void LogMessage::Init(const char* file,
              << data_->basename_
              << ' '
              << setfill(' ') << setw(3)
-             << data_->line_ << " ]";
+             << data_->line_ << "] ";
   }
   data_->num_prefix_chars_ = data_->stream_->pcount();
 
