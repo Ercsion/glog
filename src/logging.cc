@@ -65,6 +65,7 @@
 #ifdef HAVE_STACKTRACE
 # include "stacktrace.h"
 #endif
+#include <algorithm>
 
 using std::string;
 using std::vector;
@@ -1088,7 +1089,7 @@ void LogFileObject::Write(bool force_flush,
       if (file_length_ >= logging::kPageSize) {
         // don't evict the most recent page
         uint32 len = file_length_ & ~(logging::kPageSize - 1);
-        posix_fadvise(fileno(file_), 0, len, POSIX_FADV_DONTNEED);
+        //posix_fadvise(fileno(file_), 0, len, POSIX_FADV_DONTNEED);
       }
     }
 #endif
@@ -1224,12 +1225,10 @@ void LogMessage::Init(const char* file,
   //    I1018 160715 f5d4fbb0 logging.cc:1153]
   //    (log level, GMT month, date, time, thread_id, file basename, line)
   // We exclude the thread_id for the default thread.
+  string ProgramName_(glog_internal_namespace_::ProgramInvocationShortName(),4);
+  transform(ProgramName_.begin(), ProgramName_.end(), ProgramName_.begin(), ::toupper);
   if (FLAGS_log_prefix && (line != kNoLogPrefix)) {
-    stream() << LogSeverityNames[severity][0]
-             << LogSeverityNames[severity][1]
-             << LogSeverityNames[severity][2]
-             << ' '
-             << setw(2) << data_->tm_time_.tm_year%100 << '/'
+    stream() << setw(2) << data_->tm_time_.tm_year%100 << '/'
              << setw(2) << 1+data_->tm_time_.tm_mon    << '/'
              << setw(2) << data_->tm_time_.tm_mday
              << ' '
@@ -1244,8 +1243,12 @@ void LogMessage::Init(const char* file,
              << setfill(' ') << setw(24)
              << data_->basename_
              << ' '
-             << setfill(' ') << setw(3)
-             << data_->line_ << "] ";
+             << setfill(' ') << setw(4)
+             << data_->line_ << "][" 
+             << LogSeverityNames[severity][0]
+             << LogSeverityNames[severity][1]
+             << LogSeverityNames[severity][2]
+             <<' '<<ProgramName_<<"] ";
   }
   data_->num_prefix_chars_ = data_->stream_->pcount();
 

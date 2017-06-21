@@ -58,6 +58,10 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#include <string>
+#include <algorithm>
+
+using namespace std;
 
 #if defined(HAVE_SYSCALL_H) || defined(HAVE_SYS_SYSCALL_H)
 # define safe_write(fd, s, len)  syscall(SYS_write, fd, s, len)
@@ -126,12 +130,15 @@ void RawLog__(LogSeverity severity, const char* file, int line,
   int size = sizeof(buffer);
 
   // NOTE: this format should match the specification in base/logging.h
-  DoRawLog(&buf, &size, "RAW %02d/%02d/%02d %02d:%02d:%02d.%06d [%4u %24s %3d ]",
+  string ProgramName_(glog_internal_namespace_::ProgramInvocationShortName(),4);
+  transform(ProgramName_.begin(), ProgramName_.end(), ProgramName_.begin(), ::toupper);
+  DoRawLog(&buf, &size, "%02d/%02d/%02d %02d:%02d:%02d.%06d [%4u %24s %4d][RAW %4s] ",
            //LogSeverityNames[severity][0],
            t.tm_year%100,1 + t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec,
            last_usecs_for_raw_log,
            static_cast<unsigned int>(GetTID()),
-           const_basename(const_cast<char *>(file)), line);
+           const_basename(const_cast<char *>(file)), line,
+		   ProgramName_.c_str());
 
   // Record the position and size of the buffer after the prefix
   const char* msg_start = buf;
